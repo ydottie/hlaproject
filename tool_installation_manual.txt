@@ -1,0 +1,123 @@
+﻿Starting Materials
+USC and UCLA HPC Cluster Information such as structure, how to log in, how to install anaconda, and literally everything you need to know about the USC HPC is found here:
+1. https://docs.google.com/document/d/1BNF9XJ4p3Ffb2v7yL8ms_QK-eJS3trbbYI3IZs0h2lo/edit
+
+
+2. https://carc.usc.edu/user-information
+
+
+3. https://carc.usc.edu/user-information/frequently-asked-questions
+
+
+Instructions on how to install packages using anaconda can be found here:
+4. https://carc.usc.edu/user-information/user-guides/software-and-programming/anaconda  (I really think this is the only thing that we should add to the original cluster document)
+and 
+5. https://anaconda.org/
+
+
+
+
+Example script of installing and using the tool hlaforest and its supporting packages:
+https://github.com/FNaveed786/hlaforest
+https://es2.slideshare.net/Nixon1994/perl-bioperl-modules
+
+
+git clone https://github.com/FNaveed786/hlaforest.git
+cd hlaforest
+
+
+vi scripts/config.sh
+
+
+vi scripts/CallHaplotypesPE.sh
+
+
+
+
+#use conda environment to use and run HLAforest
+conda create -n hlaforest
+conda activate hlaforest
+
+
+conda list
+conda install -c bioconda bowtie
+conda list
+
+
+conda install -c bioconda perl-bioperl
+conda install -c bioconda perl-list-moreutils
+conda list
+conda install -c bioconda perl-bioperl-core
+
+
+# Bio. SeqIO provides a simple uniform interface to input and output assorted sequence file formats 
+perl -e "use Bio::SeqIO"
+
+
+# set the PATH explicitly in your script
+export PATH=/home1/jietingh/hlaforest/scripts:$PATH
+# test the installation on a subset of RNA-seq data (gm12878)
+CallHaplotypesPE.sh test2/ test2/gm12878_short_1.fastq test2/gm12878_short_2.fastq
+
+
+
+
+#make a folder to store scripts run from conda environment 
+mkdir res_anaconda/
+#run the tool and generate HLA types
+CallHaplotypesPE.sh res_anaconda/ test2/gm12878_short_1.fastq test2/gm12878_short_2.fastq
+
+
+
+
+cd /home1/jietingh/hlaforest
+
+
+export PATH=/home1/jietingh/hlaforest/scripts:$PATH
+#make a folder to run in hpc environment
+mkdir res_hpc
+
+
+#use hpc to run/ access these packages/modifies your environment so that the path and other variables are set so that you can use a program use this in hpc enviornment
+module load bowtie
+module load perl
+module load perl-bioperl
+module load perl-list-moreutils
+
+
+#run the tool and generate HLA types
+CallHaplotypesPE.sh res_hpc/ test2/gm12878_short_1.fastq test2/gm12878_short_2.fastq
+
+
+Summary of Installation of package instructions PLEASE REFER TO RESOURCES 1 AND 4 FOR MORE INFORMATION:
+* Please do not install anything in your login node because it has so little memory allocated to it(this is the first directory you encounter after logging in) 
+   * To see what directories are available to you and the storage in each use the command:
+      * Myquota
+         *      * change your current working directory to one of the two scratch directories or project directory available using one of the commands:
+   * cd /scratch/<username> or cds
+   * Scratch 1
+   * cd /scratch2/<username> or cds2
+   * Scratch 2
+   * cd  /project/<project_id>
+   * Ex cd /project/mangul341
+   * If you don’t have one already create a folder using command:
+   * mkdir <folder name>
+   * Every group member can see the information located here and can cd into your folder but not in your home and scratch directories
+   * Another way to share information can be found on resource 3
+
+
+   * Install anaconda using the commands seen in resource 1:
+   * wget https://repo.anaconda.com/archive/Anaconda3-2019.10-Linux-x86_64.sh
+   * bash Anaconda3-2019.10-Linux-x86_64.sh
+   * Create an environment (with the USC cluster you MUST create a conda environment in order to install packages) using commands found in resource 4:
+   * For home or scratch directories use:
+   * conda create --name <env_name>
+   * For project/shared use:
+   * conda create --prefix /project/<project_id>/<folder name>/<env_name>
+   *         * Activate environment using:
+      * conda activate <env_name> or conda activate /project/<project_id>/<env_name> depending on whether you used --name or --prefix
+      * Install package using:
+      * conda install <pkg>
+      * Other commands can be found by searching package name on resource 5
+Side note for anyone: each environment has access to the packages you installed while in it, if you leave the environment say by conda deactivate <env_name> then you will no longer have access to packages, 
+If you want to install something straight from github, reference the github guide: https://docs.google.com/document/d/1Vm_2djlZG-gP7omHJMBEH1csltnyNLMS11nL9_FjO8s/edit
