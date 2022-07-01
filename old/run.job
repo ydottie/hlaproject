@@ -1,0 +1,213 @@
+#!/bin/bash
+#$ -cwd
+#$ -o /u/home/v/victorx/project-zarlab/HLA/same_core_test/joblog/joblog.$JOB_ID.$TASK_ID
+#$ -j y
+#$ -pe shared 8
+#$ -l h_rt=48:00:00,h_data=4G,highp
+#$ -t 1-10:1
+
+readarray -t rawRNA < /u/home/v/victorx/project-zarlab/HLA/rna_seq_list.txt
+(( i=$SGE_TASK_ID - 1 ))
+
+RNA=${rawRNA[$i]}
+echo "This is ${RNA}"
+
+# load the job environment:
+. /u/local/Modules/default/init/modules.sh
+module use /u/local/Modules/modulefiles
+
+# Load the FSL bowtie2
+module load bowtie2
+module load samtools
+module load bwa
+module load bowtie
+module load python/anaconda3
+. /u/home/v/victorx/miniconda3/etc/profile.d/conda.sh
+
+RNA_seq_dir="/u/home/v/victorx/project-zarlab/HLA/new_STAR_alignment"
+
+
+conda activate arcasHLA
+
+#arcasHLA pipeline
+cd /u/home/g/gshabane/project-zarlab/HLA/arcasHLA
+arcasHLA_RESULT="/u/home/v/victorx/project-zarlab/HLA/same_core_test/arcasHLA"
+arcasHLA_path="/u/home/v/victorx/project-zarlab/HLA/arcasHLA"
+thread_num=8
+
+fastq_1=$RNA".1.fq.gz"
+fastq_2=$RNA".2.fq.gz"
+mkdir ${arcasHLA_RESULT}/${RNA}
+
+/usr/bin/time -f "time result\ncmd: %C\nreal %es\nuser %Us \nsys %Ss \nmemory:%MKB \ncpu %P " -o  ${arcasHLA_RESULT}/${RNA}/${RNA}.memory.txt ${arcasHLA_path}/arcasHLA genotype ${RNA_seq_dir}/${RNA}/${fastq_1} ${RNA_seq_dir}/${RNA}/${fastq_2} -g A,B,C,DPB1,DQB1,DQA1,DRB1,DMA,DMB,DPA1,DPA2,DRA,E,F,G,H,J,K,TAP1,TAP2,MICA,MICB -o ${arcasHLA_RESULT}/${RNA}/output -t ${thread_num} -v
+
+
+conda deactivate
+
+
+conda activate pythonV3
+
+
+#HLAminer_alignment
+
+HLAminer_RESULT="/u/home/v/victorx/project-zarlab/HLA/same_core_test/HLAminer_alignment"
+
+#fastq_l=$RNA"_1.fq"
+fastq_2=$RNA"_2.fq"
+fastq_3=$RNA"_1.fq"
+echo $fastq_3
+echo $fastq_2
+
+mkdir ${HLAminer_RESULT}/${RNA}
+cd ${HLAminer_RESULT}/${RNA}
+
+bwa aln -e 0 -o 0  /u/home/v/victorx/project-zarlab/HLA/HLAminer-1.4/HLAminer_v1.4/database/HLA-I_II_CDS.fasta ${RNA_seq_dir}/${RNA}/${fastq_3} > ${HLAminer_RESULT}/${RNA}/${RNA}.1.sai
+bwa aln -e 0 -o 0  /u/home/v/victorx/project-zarlab/HLA/HLAminer-1.4/HLAminer_v1.4/database/HLA-I_II_CDS.fasta ${RNA_seq_dir}/${RNA}/${fastq_2} > ${HLAminer_RESULT}/${RNA}/${RNA}.2.sai
+bwa sampe -o 1000 /u/home/v/victorx/project-zarlab/HLA/HLAminer-1.4/HLAminer_v1.4/database/HLA-I_II_CDS.fasta ${HLAminer_RESULT}/${RNA}/${RNA}.1.sai ${HLAminer_RESULT}/${RNA}/${RNA}.2.sai ${RNA_seq_dir}/${RNA}/${fastq_3} ${RNA_seq_dir}/${RNA}/${fastq_2} > ${HLAminer_RESULT}/${RNA}/${RNA}.sam
+
+/usr/bin/time -f "time result\ncmd: %C\nreal %es\nuser %Us \nsys %Ss \nmemory:%MKB \ncpu %P " -o  ${HLAminer_RESULT}/${RNA}/${RNA}.memory.txt /u/home/v/victorx/project-zarlab/HLA/HLAminer-1.4/HLAminer_v1.4/bin/HLAminer.pl -a ${HLAminer_RESULT}/${RNA}/${RNA}.sam -h /u/home/v/victorx/project-zarlab/HLA/HLAminer-1.4/HLAminer_v1.4/database/HLA-I_II_CDS.fasta -p /u/home/v/victorx/project-zarlab/HLA/HLAminer-1.4/HLAminer_v1.4/database/hla_nom_p.txt -s 500 -q 20 -i 90 -z 100 -l ${RNA}
+
+cd /u/home/v/victorx/project-zarlab/HLA/HLAminer-1.4/HLAminer_v1.4/bin/
+
+
+
+
+
+#HLAminer_assembly
+victorx_home="/u/home/v/victorx/project-zarlab/HLA"
+HLAminer_RESULT="/u/home/v/victorx/project-zarlab/HLA/same_core_test/HLAminer_assembly"
+HLAminer_home="/u/home/v/victorx/project-zarlab/HLA/HLAminer-1.4/HLAminer_v1.4/"
+
+fastq_1=$RNA"_1.fq"
+fastq_2=$RNA"_2.fq"
+
+mkdir ${HLAminer_RESULT}/${RNA}
+cd ${HLAminer_RESULT}/${RNA}
+
+patient_file=patient.fof
+printf "/u/home/v/victorx/project-zarlab/HLA/new_STAR_alignment/${RNA}/${fastq_1}\n""/u/home/v/victorx/project-zarlab/HLA/new_STAR_alignment/${RNA}/${fastq_2}" > $patient_file
+
+###Run TASR
+echo "Running TASR..."
+#TASR Default is -k 15 for recruiting reads. You may increase k, as long as k < L/2 where L is the minimum shotgun read length
+${HLAminer_home}/bin/TASR -f patient.fof -k 13 -s ${HLAminer_home}/database/HLA-I_II_CDS.fasta -i 1 -b TASRhla -w 1 -e 66 -q 20
+###Restrict200nt+ contigs
+cat TASRhla.contigs |perl -ne 'if(/size(\d+)/){if($1>=200){$flag=1;print;}else{$flag=0;}}else{print if($flag);}' > TASRhla200.contigs
+###Create a [NCBI] blastable database
+echo "Formatting blastable database..."
+${HLAminer_home}/bin/formatdb -p F -i TASRhla200.contigs
+###Align HLA contigs to references
+echo "Aligning TASR contigs to HLA references..."
+/usr/bin/time -f "time result\ncmd: %C\nreal %es\nuser %Us \nsys %Ss \nmemory:%MKB \ncpu %P " -o  ${HLAminer_RESULT}/${RNA}/${RNA}.tasrcontig.txt ${HLAminer_home}/bin/parseXMLblast.pl -c ${HLAminer_home}/bin/ncbiBlastConfig2-2-29.txt -d ${HLAminer_home}/database/HLA-I_II_CDS.fasta -i TASRhla200.contigs -o 0 -a 1 > tig_vs_hla-ncbi.coord
+###Align HLA references to contigs
+echo "Aligning HLA references to TASR contigs (go have a coffee, it may take a while)..."
+/usr/bin/time -f "time result\ncmd: %C\nreal %es\nuser %Us \nsys %Ss \nmemory:%MKB \ncpu %P " -o  ${HLAminer_RESULT}/${RNA}/${RNA}.align.txt ${HLAminer_home}/bin/parseXMLblast.pl -c ${HLAminer_home}/bin/ncbiBlastConfig2-2-29.txt -i ${HLAminer_home}/database/HLA-I_II_CDS.fasta -d TASRhla200.contigs -o 0 > hla_vs_tig-ncbi.coord
+###Predict HLA alleles
+echo "Predicting HLA alleles..."
+/usr/bin/time -f "time result\ncmd: %C\nreal %es\nuser %Us \nsys %Ss \nmemory:%MKB \ncpu %P " -o  ${HLAminer_RESULT}/${RNA}/${RNA}.predict.txt ${HLAminer_home}/bin/HLAminer.pl -b tig_vs_hla-ncbi.coord -r hla_vs_tig-ncbi.coord -c TASRhla200.contigs -h ${HLAminer_home}/database/HLA-I_II_CDS.fasta -p ${HLAminer_home}/database/hla_nom_p.txt -q 20
+cd ${victorx_home}
+
+
+#HLAVBseq
+
+HLAVbseq_RESULT="/u/home/v/victorx/project-zarlab/HLA/same_core_test/HLAVBseq"
+
+fastq_1=$RNA"_1.fq"
+fastq_2=$RNA"_2.fq"
+
+mkdir ${HLAVbseq_RESULT}/${RNA}
+cd /u/home/v/victorx/project-zarlab/HLA/hlavbseq
+bwa mem -t 8 -P -L 10000 -a ./hla_all_v2.fasta ${RNA_seq_dir}/${RNA}/${fastq_1} ${RNA_seq_dir}/${RNA}/${fastq_2} > ${HLAVbseq_RESULT}/${RNA}/${RNA}.sam
+/usr/bin/time -f "time result\ncmd: %C\nreal %es\nuser %Us \nsys %Ss \nmemory:%MKB \ncpu %P " -o  ${HLAVbseq_RESULT}/${RNA}/${RNA}.memory.txt java -jar ./HLAVBSeq.jar ./hla_all_v2.fasta ${HLAVbseq_RESULT}/${RNA}/${RNA}.sam ${HLAVbseq_RESULT}/${RNA}/${RNA}.txt --alpha_zero 0.01 --is_paired
+
+
+#HLAforest
+
+export PATH="/u/home/v/victorx/project-zarlab/HLA/hlaforest/scripts:$PATH"
+
+HLAforest_RESULT="/u/home/v/victorx/project-zarlab/HLA/same_core_test/HLAforest"
+
+fastq_1=$RNA"_1.fq"
+fastq_2=$RNA"_2.fq"
+
+mkdir ${HLAforest_RESULT}/${RNA}
+cd /u/home/v/victorx/project-zarlab/HLA/hlaforest
+
+/usr/bin/time -f "time result\ncmd: %C\nreal %es\nuser %Us \nsys %Ss \nmemory:%MKB \ncpu %P " -o  ${HLAforest_RESULT}/${RNA}/${RNA}.memory.txt ./scripts/CallHaplotypesPE.sh ${HLAforest_RESULT}/${RNA} ${RNA_seq_dir}/${RNA}/${fastq_1} ${RNA_seq_dir}/${RNA}/${fastq_2} 
+
+
+conda deactivate
+
+conda activate pythonV2
+
+
+#PHLAT pipeline
+phlatdir=/u/home/v/victorx/project-zarlab/HLA/phlat
+indexdir=/u/home/v/victorx/project-zarlab/HLA/phlat/index4phlat/index4phlat
+PHLAT_RESULT="/u/home/v/victorx/project-zarlab/HLA/same_core_test/PHLAT"
+b2url=bowtie2
+
+fastq_1=$RNA"_1.fq"
+fastq_2=$RNA"_2.fq"
+mkdir ${PHLAT_RESULT}/${RNA}
+
+cd /u/home/g/gshabane/project-zarlab/HLA/phlat
+
+/usr/bin/time -f "time result\ncmd: %C\nreal %es\nuser %Us \nsys %Ss \nmemory:%MKB \ncpu %P " -o  ${PHLAT_RESULT}/${RNA}/${RNA}.memory.txt python2 -O ${phlatdir}/dist/PHLAT_sm2.py -1 ${RNA_seq_dir}/${RNA}/${fastq_1} -2 ${RNA_seq_dir}/${RNA}/${fastq_2} -index $indexdir -b2url $b2url -tag $RNA -e $phlatdir -o ${PHLAT_RESULT}/${RNA} -pe 1 
+
+
+
+#seq2HLA Pipeline
+
+seq2HLA_RESULT="/u/home/v/victorx/project-zarlab/HLA/same_core_test/seq2HLA"
+
+fastq_1=$RNA"_1.fq"
+fastq_2=$RNA"_2.fq"
+
+
+mkdir ${seq2HLA_RESULT}/${RNA}
+cd /u/home/v/victorx/project-zarlab/HLA/seq2HLA/
+
+/usr/bin/time -f "time result\ncmd: %C\nreal %es\nuser %Us \nsys %Ss \nmemory:%MKB \ncpu %P" -o  ${seq2HLA_RESULT}/${RNA}/${RNA}.memory.txt python2 ./seq2HLA.py -1 ${RNA_seq_dir}/${RNA}/${fastq_1} -2 ${RNA_seq_dir}/${RNA}/${fastq_2} -r ${seq2HLA_RESULT}/${RNA}/${RNA} -p 8
+
+
+conda deactivate
+
+
+conda activate optitype
+
+Optitype_RESULT="/u/home/v/victorx/project-zarlab/HLA/same_core_test/Optitype"
+
+fastq_1=$RNA"_1.fq"
+fastq_2=$RNA"_2.fq"
+mkdir ${Optitype_RESULT}/${RNA}
+
+cd /u/home/v/victorx/project-zarlab/HLA/OptiType
+/usr/bin/time -f "time result\ncmd: %C\nreal %es\nuser %Us \nsys %Ss \nmemory:%MKB \ncpu %P " -o  ${Optitype_RESULT}/${RNA}/${RNA}.memory.txt python2 ./OptiTypePipeline.py -i ${RNA_seq_dir}/${RNA}/${fastq_1} ${RNA_seq_dir}/${RNA}/${fastq_2} --rna -v -c ./config.ini.example --outdir ${Optitype_RESULT}/${RNA}/ --prefix ${RNA} 
+
+
+conda deactivate
+
+conda activate pythonV3
+# Load HLA-HD path
+export PATH="/u/home/v/victorx/project-zarlab/HLA/hlahd.1.3.0/bin:$PATH"
+
+# HLA-HD pipeline
+RNA_seq_dir="/u/home/v/victorx/project-zarlab/HLA/new_STAR_alignment"
+HLAHD_RESULT="/u/home/v/victorx/project-zarlab/HLA/same_core_test/HLAHD"
+HLAHD_path="/u/home/v/victorx/project-zarlab/HLA/hlahd.1.3.0"
+
+
+fastq_1=$RNA"_1.fq"
+fastq_2=$RNA"_2.fq"
+
+mkdir ${HLAHD_RESULT}/${RNA}
+cd /u/home/v/victorx/project-zarlab/HLA/hlahd.1.3.0/bin
+
+/usr/bin/time -f "time result\ncmd: %C\nreal %es\nuser %Us \nsys %Ss \nmemory:%MKB \ncpu %P " -o ${HLAHD_RESULT}/${RNA}/${RNA}.memory.txt ${HLAHD_path}/bin/hlahd.sh -t 8 -m 10 -c 0.95 -f ${HLAHD_path}/freq_data ${RNA_seq_dir}/${RNA}/${fastq_1} ${RNA_seq_dir}/${RNA}/${fastq_2} ${HLAHD_path}/HLA_gene.split.3.32.0.txt ${HLAHD_path}/dictionary/ ${RNA} ${HLAHD_RESULT}/${RNA} 
+
+conda deactivate
+
+
+echo "Final good"
+
