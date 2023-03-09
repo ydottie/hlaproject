@@ -1,2 +1,1 @@
-# hlaproject
-Materials for project "Rigorous benchmarking of HLA callers for RNA seq data"
+Materials for project "Rigorous benchmarking of HLA benchmarking algorithms for RNA-sequencing data"
