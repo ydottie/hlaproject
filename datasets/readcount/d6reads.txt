@@ -1,0 +1,17 @@
+   7071552 ./GSM3768249Aligned.sortedByCoord.out.extracted.1.fq
+   8189916 ./GSM3768245Aligned.sortedByCoord.out.extracted.2.fq
+   7071552 ./GSM3768249Aligned.sortedByCoord.out.extracted.2.fq
+   8189916 ./GSM3768245Aligned.sortedByCoord.out.extracted.1.fq
+   6218352 ./GSM3768248Aligned.sortedByCoord.out.extracted.2.fq
+   7700860 ./GSM3768244Aligned.sortedByCoord.out.extracted.1.fq
+   6218352 ./GSM3768248Aligned.sortedByCoord.out.extracted.1.fq
+   7700860 ./GSM3768244Aligned.sortedByCoord.out.extracted.2.fq
+   7386648 ./GSM3768251Aligned.sortedByCoord.out.extracted.2.fq
+   7165396 ./GSM3768246Aligned.sortedByCoord.out.extracted.1.fq
+   7386648 ./GSM3768251Aligned.sortedByCoord.out.extracted.1.fq
+   7165396 ./GSM3768246Aligned.sortedByCoord.out.extracted.2.fq
+   6603444 ./GSM3768250Aligned.sortedByCoord.out.extracted.1.fq
+   5849172 ./GSM3768247Aligned.sortedByCoord.out.extracted.2.fq
+   6603444 ./GSM3768250Aligned.sortedByCoord.out.extracted.2.fq
+   5849172 ./GSM3768247Aligned.sortedByCoord.out.extracted.1.fq
+ 112370680 total

@@ -1,0 +1,9 @@
+  28705024 ./GSM2450858Aligned.sortedByCoord.out.extracted.1.fq
+  28705024 ./GSM2450858Aligned.sortedByCoord.out.extracted.2.fq
+  29296592 ./GSM2450855Aligned.sortedByCoord.out.extracted.1.fq
+  29296592 ./GSM2450855Aligned.sortedByCoord.out.extracted.2.fq
+  17086344 ./GSM2450857Aligned.sortedByCoord.out.extracted.1.fq
+  17086344 ./GSM2450857Aligned.sortedByCoord.out.extracted.2.fq
+  23574972 ./GSM2450856Aligned.sortedByCoord.out.extracted.2.fq
+  23574972 ./GSM2450856Aligned.sortedByCoord.out.extracted.1.fq
+ 197325864 total
