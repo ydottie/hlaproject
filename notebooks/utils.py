@@ -19,7 +19,7 @@ def compute_resolution(gs_val,pre_val):
         
     return 2 if flag==True else 0
 
-# formats gs_val to the proper HLA-X*XX:XX format
+# formats gs_val to the proper X*XX:XX format
 def reformat(gs_val):
     numbers = fix(gs_val)
     if (gs_val[0] == 'D'):
@@ -180,8 +180,8 @@ def get_inaccurate_and_all_alleles(pre,gs):
                 
                 # if the gold standard contains many allele possibilities, and the caller is incorrect,
                 # we will return only the first value in the gs
-                gs_primary = gs_row[genes[i]].astype(str).values[0].split("/")[0]
-                all_alleles.append(reformat(gs_primary))
+                gs_primary = reformat( gs_val.split("/")[0])
+                all_alleles.append( gs_primary ) 
 
                 ans1 = compute_resolution(gs_val,pre_val1)
                 ans2 = compute_resolution(gs_val,pre_val2)
@@ -203,8 +203,10 @@ def get_inaccurate_and_all_alleles(pre,gs):
                         
                     # if the gold standard contains many allele possibilities, and the caller is incorrect,
                     # we will return only the first value in the gs
-                    gs_primary = gs_row[genes[i]].astype(str).values[0].split("/")[0]
-                    all_alleles.append(reformat(gs_primary))
+                    gs_primary1 = reformat( gs_val1.split("/")[0] ) 
+                    all_alleles.append(gs_primary1)
+                    gs_primary2 = reformat( gs_val2.split("/")[0] ) 
+                    all_alleles.append(gs_primary2)
 
                     # assuming no swapping 
                     ans1 = compute_resolution(gs_val1,pre_val1)
@@ -216,14 +218,14 @@ def get_inaccurate_and_all_alleles(pre,gs):
 
                     if (ans1+ans2 > ans3+ans4):
                         if (ans1 == 0):
-                            zerodig.append(gs_primary)
+                            zerodig.append(gs_primary1)
                         if (ans2 == 0):
-                            zerodig.append(gs_primary)
+                            zerodig.append(gs_primary2)
                     else:
                         if (ans3 == 0):
-                            zerodig.append(gs_primary)
+                            zerodig.append(gs_primary2)
                         if (ans4 == 0):
-                            zerodig.append(gs_primary)
+                            zerodig.append(gs_primary1)
                 except:
                     fail = fail+1
 
