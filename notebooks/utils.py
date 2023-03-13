@@ -19,6 +19,14 @@ def compute_resolution(gs_val,pre_val):
         
     return 2 if flag==True else 0
 
+# formats gs_val to the proper HLA-X*XX:XX format
+def reformat(gs_val):
+    numbers = fix(gs_val)
+    if (gs_val[0] == 'D'):
+        return gs_val[0:4]+'*'+numbers[0:2]+':'+numbers[2:4]
+    else:
+        return gs_val[0]+'*'+numbers[0:2]+':'+numbers[2:4]
+
 # requirements: gs accession numbers are under a column labeled "Run" 
 #pre accession numbers are under a column labeled "ERR" 
 # accession numbers/column titles are labeled identically between gold standard and results csv
@@ -173,7 +181,7 @@ def get_inaccurate_and_all_alleles(pre,gs):
                 # if the gold standard contains many allele possibilities, and the caller is incorrect,
                 # we will return only the first value in the gs
                 gs_primary = gs_row[genes[i]].astype(str).values[0].split("/")[0]
-                all_alleles.append(gs_primary)
+                all_alleles.append(reformat(gs_primary))
 
                 ans1 = compute_resolution(gs_val,pre_val1)
                 ans2 = compute_resolution(gs_val,pre_val2)
@@ -196,7 +204,7 @@ def get_inaccurate_and_all_alleles(pre,gs):
                     # if the gold standard contains many allele possibilities, and the caller is incorrect,
                     # we will return only the first value in the gs
                     gs_primary = gs_row[genes[i]].astype(str).values[0].split("/")[0]
-                    all_alleles.append(gs_primary)
+                    all_alleles.append(reformat(gs_primary))
 
                     # assuming no swapping 
                     ans1 = compute_resolution(gs_val1,pre_val1)
@@ -227,7 +235,6 @@ def get_inaccurate_and_all_alleles(pre,gs):
 # Only accuracy for samples in both GS and PRE are calculated. Samples in PRE, but not in GS are ignored. Samples in GS, but not in PRE, are tallied in the "failed" variable 
 def get_inaccurate_alleles(pre,gs):
     ret = get_inaccurate_and_all_alleles(pre,gs)
-
     return ret[0] 
 
 # to sum the 4 European ancestry groups into 1 European ancestry
