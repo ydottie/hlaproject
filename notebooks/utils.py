@@ -239,10 +239,17 @@ def get_inaccurate_alleles(pre,gs):
     ret = get_inaccurate_and_all_alleles(pre,gs)
     return ret[0] 
 
-# to sum the 4 European ancestry groups into 1 European ancestry
-def sum_euro_groups(data):
-    ret = []
-    for group in data:
-        for allele in group:
-            ret.append(allele)
-    return ret
+def sum_euro_groups(data,t='count'):
+    if t == 'string':
+        ret = []
+        for group in data:
+            for allele in group:
+                ret.append(allele)
+        return ret
+        ret = [0,0,0]
+    else:
+        for group in data:
+            ret[0] += group[0]
+            ret[1] += group[1]
+            ret[2] += group[2]
+        return ret
