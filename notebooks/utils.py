@@ -246,8 +246,8 @@ def sum_euro_groups(data,t='count'):
             for allele in group:
                 ret.append(allele)
         return ret
-        ret = [0,0,0]
     else:
+        ret = [0,0,0]
         for group in data:
             ret[0] += group[0]
             ret[1] += group[1]
