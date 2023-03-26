@@ -1,6 +1,11 @@
 def fix(s):
     firstcolon = s.find(":")
-    s_new = s[firstcolon-2:firstcolon] + s[firstcolon+1:firstcolon+3]
+    if firstcolon == -1:
+        star = s.find("*")
+        s_new = s[star+1:star+3]
+    else:
+        s_new = s[firstcolon-2:firstcolon] + s[firstcolon+1:firstcolon+3]
+        
     s_new = s_new.replace("*", "0")
     return s_new
 
@@ -77,6 +82,8 @@ def compute_matches(pre,gs):
                     if gs_val1 == None or pre_val1 == None or gs_val2 == None or pre_val2 == None:
                         fail = fail+1
                         continue
+                    
+                    gs_primary = reformat( gs_val1.split("/")[0])
 
                     # assuming no swapping 
                     ans1 = compute_resolution(gs_val1,pre_val1)
@@ -88,63 +95,63 @@ def compute_matches(pre,gs):
 
                     if (ans1+ans2 > ans3+ans4):
                         if (ans1 == 0):
-                            if classI.contains(pre_val1[0]):
+                            if classI.contains(gs_primary[0]):
                                 zerodig[0] += 1 
                             else:
                                 zerodig[1] += 1
                         if (ans1 == 2):
-                            if classI.contains(pre_val1[0]):
+                            if classI.contains(gs_primary[0]):
                                 twodig[0] = twodig[0] + 1 
                             else:
                                 twodig[1] = twodig[1] + 1
                         if (ans1 == 4):
-                            if pre_val1[0] in classI:
+                            if gs_primary[0] in classI:
                                 fourdig[0] = fourdig[0] + 1 
                             else:
                                 fourdig[1] = fourdig[1] + 1
                         if (ans2 == 0):
-                            if pre_val1[0] in classI:
+                            if gs_primary[0] in classI:
                                 zerodig[0] = zerodig[0] + 1 
                             else:
                                 zerodig[1] = zerodig[1] + 1
                         if (ans2 == 2):
-                            if pre_val1[0] in classI:
+                            if gs_primary[0] in classI:
                                 twodig[0] = twodig[0] + 1 
                             else:
                                 twodig[1] = twodig[1] + 1
                         if (ans2 == 4):
-                            if pre_val1[0] in classI:
+                            if gs_primary[0] in classI:
                                 fourdig[0] = fourdig[0] + 1 
                             else:
                                 fourdig[1] = fourdig[1] + 1
                     else:
                         if (ans3 == 0):
-                            if pre_val1[0] in classI:
+                            if gs_primary[0] in classI:
                                 zerodig[0] = zerodig[0] + 1 
                             else:
                                 zerodig[1] = zerodig[1] + 1
                         if (ans3 == 2):
-                            if pre_val1[0] in classI:
+                            if gs_primary[0] in classI:
                                 twodig[0] = twodig[0] + 1 
                             else:
                                 twodig[1] = twodig[1] + 1
                         if (ans3 == 4):
-                            if pre_val1[0] in classI:
+                            if gs_primary[0] in classI:
                                 fourdig[0] = fourdig[0] + 1 
                             else:
                                 fourdig[1] = fourdig[1] + 1
                         if (ans4 == 0):
-                            if pre_val1[0] in classI:
+                            if gs_primary[0] in classI:
                                 zerodig[0] = zerodig[0] + 1 
                             else:
                                 zerodig[1] = zerodig[1] + 1
                         if (ans4 == 2):
-                            if pre_val1[0] in classI:
+                            if gs_primary[0] in classI:
                                 twodig[0] = twodig[0] + 1 
                             else:
                                 twodig[1] = twodig[1] + 1
                         if (ans4 == 4):
-                            if pre_val1[0] in classI:
+                            if gs_primary[0] in classI:
                                 fourdig[0] = fourdig[0] + 1 
                             else:
                                 fourdig[1] = fourdig[1] + 1
@@ -239,8 +246,8 @@ def get_inaccurate_alleles(pre,gs):
     ret = get_inaccurate_and_all_alleles(pre,gs)
     return ret[0] 
 
-def sum_euro_groups(data,t='count'):
-    if t == 'string':
+def sum_euro_groups(data,s=False):
+    if s:
         ret = []
         for group in data:
             for allele in group:
