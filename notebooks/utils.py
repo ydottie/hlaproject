@@ -234,9 +234,9 @@ def get_inaccurate_and_all_alleles(pre,gs):
                             zerodig.append(gs_primary2)
                     else:
                         if (ans3 == 0):
-                            zerodig.append(gs_primary2)
-                        if (ans4 == 0):
                             zerodig.append(gs_primary1)
+                        if (ans4 == 0):
+                            zerodig.append(gs_primary2)
                 except:
                     fail = fail+1
 
