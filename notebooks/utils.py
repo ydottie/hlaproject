@@ -24,7 +24,7 @@ def compute_resolution(gs_val,pre_val):
         
     return 2 if flag==True else 0
 
-# formats gs_val to the proper X*XX:XX format
+# formats val to the proper X*XX:XX format
 def reformat(gs_val):
     numbers = fix(gs_val)
     if (gs_val[0] == 'D'):
@@ -78,8 +78,12 @@ def compute_matches(pre,gs):
                     pre_val1 = pre_row[genes[i]].astype(str).values[0]
                     gs_val2 = gs_row[genes[i+1]].astype(str).values[0]
                     pre_val2 = pre_row[genes[i+1]].astype(str).values[0]
-
+                    
                     if gs_val1 == None or pre_val1 == None or gs_val2 == None or pre_val2 == None:
+                        fail = fail+1
+                        continue
+                    
+                    if gs_val1 == 'nan' or pre_val1 == 'nan':
                         fail = fail+1
                         continue
                     
