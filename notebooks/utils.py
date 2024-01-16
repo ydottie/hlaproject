@@ -78,19 +78,23 @@ def compute_matches(pre,gs):
                     pre_val1 = pre_row[genes[i]].astype(str).values[0]
                     gs_val2 = gs_row[genes[i+1]].astype(str).values[0]
                     pre_val2 = pre_row[genes[i+1]].astype(str).values[0]
-                    
-                    if gs_val1 == None or pre_val1 == None or gs_val2 == None or pre_val2 == None:
+
+                    # TODO: add isvalid check to tally invalid and blank predictions as miscalls? (see mourisl github issue)
+                    if pre_val1 == None or pre_val1 == 'nan':
                         fail = fail+1
+
+                        if pre_val2 == None or pre_val2 == 'nan':
+                            fail = fail+1
                         continue
-                    
-                    if gs_val1 == 'nan' or pre_val1 == 'nan':
-                        fail = fail+1
-                        continue
-                    
+
+                    if pre_val2 == None or pre_val2 == 'nan':
+                            fail = fail+1
+                            continue
+
+
                     # TODO: rewrite to consider all gold standard alleles in accuracy calc, not just the primary/initial one
                     gs_primary = reformat( gs_val1.split("/")[0])
-                    
-                    # TODO: add isvalid check to tally invalid and blank predictions as miscalls? (see mourisl github issue)
+
 
                     # assuming no swapping 
                     ans1 = compute_resolution(gs_val1,pre_val1)
@@ -102,12 +106,12 @@ def compute_matches(pre,gs):
 
                     if (ans1+ans2 > ans3+ans4):
                         if (ans1 == 0):
-                            if classI.contains(gs_primary[0]):
+                            if gs_primary[0] in classI:
                                 zerodig[0] += 1 
                             else:
                                 zerodig[1] += 1
                         if (ans1 == 2):
-                            if classI.contains(gs_primary[0]):
+                            if gs_primary[0] in classI:
                                 twodig[0] = twodig[0] + 1 
                             else:
                                 twodig[1] = twodig[1] + 1
@@ -163,9 +167,10 @@ def compute_matches(pre,gs):
                             else:
                                 fourdig[1] = fourdig[1] + 1
                 except:
-                    fail = fail+1
+                    print("exception")
+                    fail = fail+2
 
-    return zerodig,twodig,fourdig #,fail #onzero fail indicates exception occurred
+    return zerodig,twodig,fourdig,fail #onzero fail indicates exception occurred
 
 # requirements: gs accession numbers are under a column labeled "Run" 
 #pre accession numbers are under a column labeled "ERR" 
