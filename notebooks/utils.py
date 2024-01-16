@@ -87,7 +87,10 @@ def compute_matches(pre,gs):
                         fail = fail+1
                         continue
                     
+                    # TODO: rewrite to consider all gold standard alleles in accuracy calc, not just the primary/initial one
                     gs_primary = reformat( gs_val1.split("/")[0])
+                    
+                    # TODO: add isvalid check to tally invalid and blank predictions as miscalls? (see mourisl github issue)
 
                     # assuming no swapping 
                     ans1 = compute_resolution(gs_val1,pre_val1)
