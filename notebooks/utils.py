@@ -32,6 +32,92 @@ def reformat(gs_val):
     else:
         return gs_val[0]+'*'+numbers[0:2]+':'+numbers[2:4]
 
+
+def pair_allele_tally(ans1,ans2,ans3,ans4,zerodig,twodig,fourdig,gs_primary,classI):
+    if (ans1+ans2 > ans3+ans4):
+        if (ans1 == 0):
+            if gs_primary in classI:
+                zerodig[0] += 1 
+            else:
+                zerodig[1] += 1
+        if (ans1 == 2):
+            if gs_primary in classI:
+                twodig[0] = twodig[0] + 1 
+            else:
+                twodig[1] = twodig[1] + 1
+        if (ans1 == 4):
+            if gs_primary in classI:
+                fourdig[0] = fourdig[0] + 1 
+            else:
+                fourdig[1] = fourdig[1] + 1
+        if (ans2 == 0):
+            if gs_primary in classI:
+                zerodig[0] = zerodig[0] + 1 
+            else:
+                zerodig[1] = zerodig[1] + 1
+        if (ans2 == 2):
+            if gs_primary in classI:
+                twodig[0] = twodig[0] + 1 
+            else:
+                twodig[1] = twodig[1] + 1
+        if (ans2 == 4):
+            if gs_primary in classI:
+                fourdig[0] = fourdig[0] + 1 
+            else:
+                fourdig[1] = fourdig[1] + 1
+    else:
+        if (ans3 == 0):
+            if gs_primary in classI:
+                zerodig[0] = zerodig[0] + 1 
+            else:
+                zerodig[1] = zerodig[1] + 1
+        if (ans3 == 2):
+            if gs_primary in classI:
+                twodig[0] = twodig[0] + 1 
+            else:
+                twodig[1] = twodig[1] + 1
+        if (ans3 == 4):
+            if gs_primary in classI:
+                fourdig[0] = fourdig[0] + 1 
+            else:
+                fourdig[1] = fourdig[1] + 1
+        if (ans4 == 0):
+            if gs_primary in classI:
+                zerodig[0] = zerodig[0] + 1 
+            else:
+                zerodig[1] = zerodig[1] + 1
+        if (ans4 == 2):
+            if gs_primary in classI:
+                twodig[0] = twodig[0] + 1 
+            else:
+                twodig[1] = twodig[1] + 1
+        if (ans4 == 4):
+            if gs_primary in classI:
+                fourdig[0] = fourdig[0] + 1 
+            else:
+                fourdig[1] = fourdig[1] + 1
+    return zerodig,twodig,fourdig
+
+def single_allele_tally(ans1,ans2,zerodig,twodig,fourdig,gs_primary,classI):
+    ans = max(ans1,ans2)
+    if (ans == 0):
+        if gs_primary in classI:
+            zerodig[0] = zerodig[0] + 1 
+        else:
+            zerodig[1] = zerodig[1] + 1
+    if (ans == 2):
+        if gs_primary in classI:
+            twodig[0] = twodig[0] + 1 
+        else:
+            twodig[1] = twodig[1] + 1
+    if (ans == 4):
+        if gs_primary in classI:
+            fourdig[0] = fourdig[0] + 1 
+        else:
+            fourdig[1] = fourdig[1] + 1
+    return zerodig,twodig,fourdig
+
+    
 # requirements: gs accession numbers are under a column labeled "Run" 
 #pre accession numbers are under a column labeled "ERR" 
 # accession numbers/column titles are labeled identically between gold standard and results csv
@@ -42,7 +128,7 @@ def compute_matches(pre,gs):
     fourdig = [0,0]
     twodig = [0,0]
     zerodig = [0,0]
-    fail = 0
+    fail = [0,0]
 
     d5 = ['Run', 'A', 'B']
     d6 = ['Run', 'C']
@@ -62,13 +148,11 @@ def compute_matches(pre,gs):
                 pre_val1 = pre_row[genes[i]].astype(str).values[0]
                 pre_val2 = pre_row[genes[i]+".1"].astype(str).values[0]
 
-                ans = max(compute_resolution(gs_val,pre_val1), compute_resolution(gs_val,pre_val2))
-                if (ans == 0):
-                    zerodig[0] = zerodig[0] + 1
-                if (ans == 2):
-                    twodig[0] = twodig[0] + 1
-                if (ans == 4):
-                    fourdig[0] = fourdig[0] + 1
+                ans1 = compute_resolution(gs_val,pre_val1)
+                ans2 = compute_resolution(gs_val,pre_val2)
+                            
+                    
+                zerodig,twodig,fourdig=single_allele_tally(ans1, ans2, zerodig, twodig, fourdig, gs_val, classI)
 
         # if we are working with d1-d4, the biallelic datasets
         else:
@@ -79,22 +163,50 @@ def compute_matches(pre,gs):
                     gs_val2 = gs_row[genes[i+1]].astype(str).values[0]
                     pre_val2 = pre_row[genes[i+1]].astype(str).values[0]
 
-                    # TODO: add isvalid check to tally invalid and blank predictions as miscalls? (see mourisl github issue)
-                    if pre_val1 == None or pre_val1 == 'nan':
-                        fail = fail+1
-
-                        if pre_val2 == None or pre_val2 == 'nan':
-                            fail = fail+1
-                        continue
-
-                    if pre_val2 == None or pre_val2 == 'nan':
-                            fail = fail+1
-                            continue
-
-
-                    # TODO: rewrite to consider all gold standard alleles in accuracy calc, not just the primary/initial one
                     gs_primary = reformat( gs_val1.split("/")[0])
+                except:
+                    if i>=7:
+                        fail[1] += 2
+                    else:
+                        fail[0] += 2
+                    continue
+               
+                    
+                # handling cases where one or both alleles are "no call"
+                no_val1 = False
+                no_val2 = False
 
+                if pre_val1 == None or pre_val1 == 'nan':
+                    no_val1=True
+                    if gs_primary[0] in classI:
+                        fail[0] += 1 
+                    else:
+                        fail[1] += 1
+
+                if pre_val2 == None or pre_val2 == 'nan':
+                    no_val2=True
+                    if gs_primary[0] in classI:
+                        fail[0] += 1 
+                    else:
+                        fail[1] += 1
+
+                #if both alleles are "no call" simply end this iteration
+                if no_val1 and no_val2:
+                    continue
+
+                # if one allele is "no call", calculate accuracy as if a mono allele
+                elif no_val1:
+                    ans1 = compute_resolution(gs_val1,pre_val2)
+                    ans2 = compute_resolution(gs_val1,pre_val2)
+                    zerodig,twodig,fourdig=single_allele_tally(ans1,ans2,zerodig,twodig,fourdig, gs_primary[0], classI)
+
+
+                elif no_val2:
+                    ans1 = compute_resolution(gs_val1,pre_val1)
+                    ans2 = compute_resolution(gs_val1,pre_val1)
+                    zerodig,twodig,fourdig=single_allele_tally(ans1,ans2,zerodig,twodig,fourdig, gs_primary[0], classI)
+
+                else: # most typical case -- both calls are valid alleles
 
                     # assuming no swapping 
                     ans1 = compute_resolution(gs_val1,pre_val1)
@@ -104,151 +216,94 @@ def compute_matches(pre,gs):
                     ans3 = compute_resolution(gs_val1,pre_val2)
                     ans4 = compute_resolution(gs_val2,pre_val1)
 
-                    if (ans1+ans2 > ans3+ans4):
-                        if (ans1 == 0):
-                            if gs_primary[0] in classI:
-                                zerodig[0] += 1 
-                            else:
-                                zerodig[1] += 1
-                        if (ans1 == 2):
-                            if gs_primary[0] in classI:
-                                twodig[0] = twodig[0] + 1 
-                            else:
-                                twodig[1] = twodig[1] + 1
-                        if (ans1 == 4):
-                            if gs_primary[0] in classI:
-                                fourdig[0] = fourdig[0] + 1 
-                            else:
-                                fourdig[1] = fourdig[1] + 1
-                        if (ans2 == 0):
-                            if gs_primary[0] in classI:
-                                zerodig[0] = zerodig[0] + 1 
-                            else:
-                                zerodig[1] = zerodig[1] + 1
-                        if (ans2 == 2):
-                            if gs_primary[0] in classI:
-                                twodig[0] = twodig[0] + 1 
-                            else:
-                                twodig[1] = twodig[1] + 1
-                        if (ans2 == 4):
-                            if gs_primary[0] in classI:
-                                fourdig[0] = fourdig[0] + 1 
-                            else:
-                                fourdig[1] = fourdig[1] + 1
-                    else:
-                        if (ans3 == 0):
-                            if gs_primary[0] in classI:
-                                zerodig[0] = zerodig[0] + 1 
-                            else:
-                                zerodig[1] = zerodig[1] + 1
-                        if (ans3 == 2):
-                            if gs_primary[0] in classI:
-                                twodig[0] = twodig[0] + 1 
-                            else:
-                                twodig[1] = twodig[1] + 1
-                        if (ans3 == 4):
-                            if gs_primary[0] in classI:
-                                fourdig[0] = fourdig[0] + 1 
-                            else:
-                                fourdig[1] = fourdig[1] + 1
-                        if (ans4 == 0):
-                            if gs_primary[0] in classI:
-                                zerodig[0] = zerodig[0] + 1 
-                            else:
-                                zerodig[1] = zerodig[1] + 1
-                        if (ans4 == 2):
-                            if gs_primary[0] in classI:
-                                twodig[0] = twodig[0] + 1 
-                            else:
-                                twodig[1] = twodig[1] + 1
-                        if (ans4 == 4):
-                            if gs_primary[0] in classI:
-                                fourdig[0] = fourdig[0] + 1 
-                            else:
-                                fourdig[1] = fourdig[1] + 1
-                except:
-                    print("exception")
-                    fail = fail+2
+                    zerodig,twodig,fourdig=pair_allele_tally(ans1,ans2,ans3,ans4,zerodig,twodig,fourdig, gs_primary[0], classI)
+ 
 
     return zerodig,twodig,fourdig,fail #onzero fail indicates exception occurred
 
-# requirements: gs accession numbers are under a column labeled "Run" 
-#pre accession numbers are under a column labeled "ERR" 
-# accession numbers/column titles are labeled identically between gold standard and results csv
-# Only accuracy for samples in both GS and PRE are calculated. Samples in PRE, but not in GS are ignored. Samples in GS, but not in PRE, are tallied in the "failed" variable 
-def get_inaccurate_and_all_alleles(pre,gs):
+####################
+#
+# # BELOW FUNCTION COMMENTED AS A REMINDER TO REWRITE IT MIRRORING THE BUG FIXES TO COMPUTE_MATCHES
+#
+####################
+#
+# # requirements: gs accession numbers are under a column labeled "Run" 
+# #pre accession numbers are under a column labeled "ERR" 
+# # accession numbers/column titles are labeled identically between gold standard and results csv
+# # Only accuracy for samples in both GS and PRE are calculated. Samples in PRE, but not in GS are ignored. Samples in GS, but not in PRE, are tallied in the "failed" variable 
+# def get_inaccurate_and_all_alleles(pre,gs):
 
-    zerodig = []
-    all_alleles = [] # holds all alleles in gold standard
-    fail = 0
+#     zerodig = []
+#     all_alleles = [] # holds all alleles in gold standard
+#     fail = 0
 
-    accession_numbers = gs['Run'].values.tolist()
-    genes = gs.columns.values.tolist()
+#     accession_numbers = gs['Run'].values.tolist()
+#     genes = gs.columns.values.tolist()
 
-    for number in accession_numbers:
-        pre_row = pre.loc[pre['ERR'] == number]
-        gs_row = gs.loc[gs['Run'] == number]
+#     for number in accession_numbers:
+#         pre_row = pre.loc[pre['ERR'] == number]
+#         gs_row = gs.loc[gs['Run'] == number]
         
         
-        # if we are working with d5 or d6, the monoallelic datasets
-        if (gs.columns.tolist() == ['Run', 'A', 'B'] or gs.columns.tolist() == ['Run', 'C']):
-            for i in range(1,len(genes)):
-                gs_val = gs_row[genes[i]].astype(str).values[0]
-                pre_val1 = pre_row[genes[i]].astype(str).values[0]
-                pre_val2 = pre_row[genes[i]+".1"].astype(str).values[0]
+#         # if we are working with d5 or d6, the monoallelic datasets
+#         if (gs.columns.tolist() == ['Run', 'A', 'B'] or gs.columns.tolist() == ['Run', 'C']):
+#             for i in range(1,len(genes)):
+#                 gs_val = gs_row[genes[i]].astype(str).values[0]
+#                 pre_val1 = pre_row[genes[i]].astype(str).values[0]
+#                 pre_val2 = pre_row[genes[i]+".1"].astype(str).values[0]
                 
-                # if the gold standard contains many allele possibilities, and the caller is incorrect,
-                # we will return only the first value in the gs
-                gs_primary = reformat( gs_val.split("/")[0])
-                all_alleles.append( gs_primary ) 
+#                 # if the gold standard contains many allele possibilities, and the caller is incorrect,
+#                 # we will return only the first value in the gs
+#                 gs_primary = reformat( gs_val.split("/")[0])
+#                 all_alleles.append( gs_primary ) 
 
-                ans1 = compute_resolution(gs_val,pre_val1)
-                ans2 = compute_resolution(gs_val,pre_val2)
-                if (max(ans1,ans2) == 0):
-                    zerodig.append(gs_primary)
+#                 ans1 = compute_resolution(gs_val,pre_val1)
+#                 ans2 = compute_resolution(gs_val,pre_val2)
+#                 if (max(ans1,ans2) == 0):
+#                     zerodig.append(gs_primary)
 
-        # if we are working with d1-d4, the biallelic datasets
-        else:
-            for i in range(1,len(genes),2):
-                try:
-                    gs_val1 = gs_row[genes[i]].astype(str).values[0]
-                    pre_val1 = pre_row[genes[i]].astype(str).values[0]
-                    gs_val2 = gs_row[genes[i+1]].astype(str).values[0]
-                    pre_val2 = pre_row[genes[i+1]].astype(str).values[0]
+#         # if we are working with d1-d4, the biallelic datasets
+#         else:
+#             for i in range(1,len(genes),2):
+#                 try:
+#                     gs_val1 = gs_row[genes[i]].astype(str).values[0]
+#                     pre_val1 = pre_row[genes[i]].astype(str).values[0]
+#                     gs_val2 = gs_row[genes[i+1]].astype(str).values[0]
+#                     pre_val2 = pre_row[genes[i+1]].astype(str).values[0]
 
-                    if (gs_val1 == None) or (pre_val1 == None) or (gs_val2 == None) or (pre_val2 == None):
-                        fail = fail+1
-                        continue
+#                     if (gs_val1 == None) or (pre_val1 == None) or (gs_val2 == None) or (pre_val2 == None):
+#                         fail = fail+1
+#                         continue
                         
-                    # if the gold standard contains many allele possibilities, and the caller is incorrect,
-                    # we will return only the first value in the gs
-                    gs_primary1 = reformat( gs_val1.split("/")[0] ) 
-                    all_alleles.append(gs_primary1)
-                    gs_primary2 = reformat( gs_val2.split("/")[0] ) 
-                    all_alleles.append(gs_primary2)
+#                     # if the gold standard contains many allele possibilities, and the caller is incorrect,
+#                     # we will return only the first value in the gs
+#                     gs_primary1 = reformat( gs_val1.split("/")[0] ) 
+#                     all_alleles.append(gs_primary1)
+#                     gs_primary2 = reformat( gs_val2.split("/")[0] ) 
+#                     all_alleles.append(gs_primary2)
 
-                    # assuming no swapping 
-                    ans1 = compute_resolution(gs_val1,pre_val1)
-                    ans2 = compute_resolution(gs_val2,pre_val2)
+#                     # assuming no swapping 
+#                     ans1 = compute_resolution(gs_val1,pre_val1)
+#                     ans2 = compute_resolution(gs_val2,pre_val2)
 
-                    # assuming swapping
-                    ans3 = compute_resolution(gs_val1,pre_val2)
-                    ans4 = compute_resolution(gs_val2,pre_val1)
+#                     # assuming swapping
+#                     ans3 = compute_resolution(gs_val1,pre_val2)
+#                     ans4 = compute_resolution(gs_val2,pre_val1)
 
-                    if (ans1+ans2 > ans3+ans4):
-                        if (ans1 == 0):
-                            zerodig.append(gs_primary1)
-                        if (ans2 == 0):
-                            zerodig.append(gs_primary2)
-                    else:
-                        if (ans3 == 0):
-                            zerodig.append(gs_primary1)
-                        if (ans4 == 0):
-                            zerodig.append(gs_primary2)
-                except:
-                    fail = fail+1
+#                     if (ans1+ans2 > ans3+ans4):
+#                         if (ans1 == 0):
+#                             zerodig.append(gs_primary1)
+#                         if (ans2 == 0):
+#                             zerodig.append(gs_primary2)
+#                     else:
+#                         if (ans3 == 0):
+#                             zerodig.append(gs_primary1)
+#                         if (ans4 == 0):
+#                             zerodig.append(gs_primary2)
+#                 except:
+#                     fail = fail+1
 
-    return zerodig, all_alleles #,fail #onzero fail indicates exception occurred
+#     return zerodig, all_alleles #,fail #onzero fail indicates exception occurred
 
 # requirements: gs accession numbers are under a column labeled "Run" 
 #pre accession numbers are under a column labeled "ERR" 
