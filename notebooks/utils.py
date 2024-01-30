@@ -38,7 +38,7 @@ def reformat(gs_val):
     
 
 # updates accuracy for **PAIRED** allele comparison (2 pre - 2 gs)
-def pair_allele_tally(ans1,ans2,ans3,ans4,zerodig,twodig,fourdig,gs_locus):
+def pair_allele_tally(ans1,ans2,ans3,ans4,zerofield,onefield,twofield,gs_locus):
     
     # parallel comparison
     if (ans1+ans2 > ans3+ans4):
@@ -46,95 +46,95 @@ def pair_allele_tally(ans1,ans2,ans3,ans4,zerodig,twodig,fourdig,gs_locus):
         # assign accuracy for allele 1
         if (ans1 == 0):
             if gs_locus != 'D':
-                zerodig[0]  = zerodig[0] + 1 
+                zerofield[0]  = zerofield[0] + 1 
             else:
-                zerodig[1] = zerodig[1] + 1
+                zerofield[1] = zerofield[1] + 1
         if (ans1 == 2):
             if gs_locus != 'D':
-                twodig[0] = twodig[0] + 1 
+                onefield[0] = onefield[0] + 1 
             else:
-                twodig[1] = twodig[1] + 1
+                onefield[1] = onefield[1] + 1
         if (ans1 == 4):
             if gs_locus != 'D':
-                fourdig[0] = fourdig[0] + 1 
+                twofield[0] = twofield[0] + 1 
             else:
-                fourdig[1] = fourdig[1] + 1
+                twofield[1] = twofield[1] + 1
         
         # assign accuracy for allele 2
         if (ans2 == 0):
             if gs_locus != 'D':
-                zerodig[0] = zerodig[0] + 1 
+                zerofield[0] = zerofield[0] + 1 
             else:
-                zerodig[1] = zerodig[1] + 1
+                zerofield[1] = zerofield[1] + 1
         if (ans2 == 2):
             if gs_locus != 'D':
-                twodig[0] = twodig[0] + 1 
+                onefield[0] = onefield[0] + 1 
             else:
-                twodig[1] = twodig[1] + 1
+                onefield[1] = onefield[1] + 1
         if (ans2 == 4):
             if gs_locus != 'D':
-                fourdig[0] = fourdig[0] + 1 
+                twofield[0] = twofield[0] + 1 
             else:
-                fourdig[1] = fourdig[1] + 1
+                twofield[1] = twofield[1] + 1
                 
     # crosswise comparison
     else:
         # assign accuracy for allele 1
         if (ans3 == 0):
             if gs_locus != 'D':
-                zerodig[0] = zerodig[0] + 1 
+                zerofield[0] = zerofield[0] + 1 
             else:
-                zerodig[1] = zerodig[1] + 1
+                zerofield[1] = zerofield[1] + 1
         if (ans3 == 2):
             if gs_locus != 'D':
-                twodig[0] = twodig[0] + 1 
+                onefield[0] = onefield[0] + 1 
             else:
-                twodig[1] = twodig[1] + 1
+                onefield[1] = onefield[1] + 1
         if (ans3 == 4):
             if gs_locus != 'D':
-                fourdig[0] = fourdig[0] + 1 
+                twofield[0] = twofield[0] + 1 
             else:
-                fourdig[1] = fourdig[1] + 1
+                twofield[1] = twofield[1] + 1
                 
         # assign accuracy for allele 2
         if (ans4 == 0):
             if gs_locus != 'D':
-                zerodig[0] = zerodig[0] + 1 
+                zerofield[0] = zerofield[0] + 1 
             else:
-                zerodig[1] = zerodig[1] + 1
+                zerofield[1] = zerofield[1] + 1
         if (ans4 == 2):
             if gs_locus != 'D':
-                twodig[0] = twodig[0] + 1 
+                onefield[0] = onefield[0] + 1 
             else:
-                twodig[1] = twodig[1] + 1
+                onefield[1] = onefield[1] + 1
         if (ans4 == 4):
             if gs_locus != 'D':
-                fourdig[0] = fourdig[0] + 1 
+                twofield[0] = twofield[0] + 1 
             else:
-                fourdig[1] = fourdig[1] + 1
+                twofield[1] = twofield[1] + 1
     
-    return zerodig,twodig,fourdig
+    return zerofield,onefield,twofield
 
 # updates accuracy for **SINGLE** allele comparison (works with either 2 pre - 1 gs, or 1 gs - 2 pre)
-def single_allele_tally(ans1,ans2,zerodig,twodig,fourdig,gs_locus):
+def single_allele_tally(ans1,ans2,zerofield,onefield,twofield,gs_locus):
     ans = max(ans1,ans2)
     
     if (ans == 0):
         if gs_locus != 'D':
-            zerodig[0] = zerodig[0] + 1 
+            zerofield[0] = zerofield[0] + 1 
         else:
-            zerodig[1] = zerodig[1] + 1
+            zerofield[1] = zerofield[1] + 1
     if (ans == 2):
         if gs_locus != 'D':
-            twodig[0] = twodig[0] + 1 
+            onefield[0] = onefield[0] + 1 
         else:
-            twodig[1] = twodig[1] + 1
+            onefield[1] = onefield[1] + 1
     if (ans == 4):
         if gs_locus != 'D':
-            fourdig[0] = fourdig[0] + 1 
+            twofield[0] = twofield[0] + 1 
         else:
-            fourdig[1] = fourdig[1] + 1
-    return zerodig,twodig,fourdig
+            twofield[1] = twofield[1] + 1
+    return zerofield,onefield,twofield
 
 ###############################   
 # MASTER ACCURACY FUNCTION 
@@ -147,18 +147,25 @@ def single_allele_tally(ans1,ans2,zerodig,twodig,fourdig,gs_locus):
 # INPUTS:
 # Pandas dataframes for gs and pre
 # OUTPUTS:
-# zerodig, twodig, fourdig, and nocall: integer lists of length 2, index 0 holds class I counts, index 1 holds class II counts
+# zerofield, onefield, twofield, and nocall: integer lists of length 2, index 0 holds class I counts, index 1 holds class II counts
 # all_gs_alleles, all_pre_alleles, miscalled_gs_alleles: string list of alleles
 # NOTES:
 # cells in PRE, but not in GS are ignored
 # cells in GS, but not in PRE, are tallied in the "nocall" variable 
 ###############################
 def master_accuracy_function(pre,gs):
+    
+    # fixing empty cells in case of homozygous allele (bug fix suggested by mourisl in github issue #1)
+    for gene in ["A", "B", "C", "DQB1", "DRB1"]:
+        target = gene + ".1"
+        if (target not in pre.columns):
+            continue
+        pre[target].fillna(pre[gene], inplace=True)
 
     # Initializing variables
-    fourdig = [0,0]
-    twodig = [0,0]
-    zerodig = [0,0]
+    twofield = [0,0]
+    onefield = [0,0]
+    zerofield = [0,0]
     nocall = [0,0]
 
     d5 = ['Run', 'A', 'B']
@@ -206,7 +213,7 @@ def master_accuracy_function(pre,gs):
                 ans2 = compute_resolution(gs_val,pre_val2)
                 
                 # update the results variables
-                zerodig,twodig,fourdig=single_allele_tally(ans1, ans2, zerodig, twodig, fourdig, gs_locus)
+                zerofield,onefield,twofield=single_allele_tally(ans1, ans2, zerofield, onefield, twofield, gs_locus)
                 if (max(ans1,ans2) == 0):
                      miscalled_gs_alleles.append( gs_val )
 
@@ -277,7 +284,7 @@ def master_accuracy_function(pre,gs):
                             miscalled_gs_alleles.append(reformat( gs_val1.split("/")[0]))
                         else: 
                             miscalled_gs_alleles.append(reformat( gs_val2.split("/")[0]))
-                    zerodig,twodig,fourdig=single_allele_tally(ans1,ans2,zerodig,twodig,fourdig, gs_locus)
+                    zerofield,onefield,twofield=single_allele_tally(ans1,ans2,zerofield,onefield,twofield, gs_locus)
 
                 elif no_val2:
                     ans1 = compute_resolution(gs_val1,pre_val1)
@@ -288,7 +295,7 @@ def master_accuracy_function(pre,gs):
                             miscalled_gs_alleles.append(reformat( gs_val1.split("/")[0]))
                         else: 
                             miscalled_gs_alleles.append(reformat( gs_val2.split("/")[0]))
-                    zerodig,twodig,fourdig=single_allele_tally(ans1,ans2,zerodig,twodig,fourdig, gs_locus)
+                    zerofield,onefield,twofield=single_allele_tally(ans1,ans2,zerofield,onefield,twofield, gs_locus)
 
                 else: # most typical case -- both calls are valid alleles
 
@@ -311,10 +318,10 @@ def master_accuracy_function(pre,gs):
                         if (ans4 == 0):
                             miscalled_gs_alleles.append(reformat( gs_val1.split("/")[0]))
 
-                    zerodig,twodig,fourdig=pair_allele_tally(ans1,ans2,ans3,ans4,zerodig,twodig,fourdig, gs_locus)
+                    zerofield,onefield,twofield=pair_allele_tally(ans1,ans2,ans3,ans4,zerofield,onefield,twofield, gs_locus)
  
 
-    return zerodig,twodig,fourdig,nocall,all_gs_alleles,miscalled_gs_alleles,all_pre_alleles
+    return zerofield,onefield,twofield,nocall,all_gs_alleles,miscalled_gs_alleles,all_pre_alleles
 
 
 def get_miscalled_alleles_only(pre,gs):
