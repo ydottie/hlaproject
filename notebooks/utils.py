@@ -1,3 +1,4 @@
+# formats alleles into barebones 4-char strings. for ex, input s=A*01:03 returns 0103
 def fix(s):
     firstcolon = s.find(":")
     
@@ -11,6 +12,7 @@ def fix(s):
         
     return s_new
 
+# compares gs_val to pre_val and returns 0 for miscall, 2 for one-field accurate, and 4 for two-field accurate
 def compute_resolution(gs_val,pre_val):
     gs_all = gs_val.split("/")
     pre_fixed = fix(pre_val)
@@ -26,7 +28,7 @@ def compute_resolution(gs_val,pre_val):
         
     return 2 if flag==True else 0
 
-# formats val to exact X*XX:XX format
+# reformats val to exact X*XX:XX format to standardize and prevent unexpected bugs/symbols
 def reformat(gs_val):
     numbers = fix(gs_val)
     if (gs_val[0] == 'D'): 
@@ -35,7 +37,7 @@ def reformat(gs_val):
         return gs_val[0]+'*'+numbers[0:2]+':'+numbers[2:4]
     
 
-# updates accuracy for paired allele comparison (2 pre - 2 gs)
+# updates accuracy for **PAIRED** allele comparison (2 pre - 2 gs)
 def pair_allele_tally(ans1,ans2,ans3,ans4,zerodig,twodig,fourdig,gs_locus):
     
     # parallel comparison
@@ -113,7 +115,7 @@ def pair_allele_tally(ans1,ans2,ans3,ans4,zerodig,twodig,fourdig,gs_locus):
     
     return zerodig,twodig,fourdig
 
-# updates accuracy for single allele comparison (2 pre - 1 gs, or 1 gs - 2 pre)
+# updates accuracy for **SINGLE** allele comparison (works with either 2 pre - 1 gs, or 1 gs - 2 pre)
 def single_allele_tally(ans1,ans2,zerodig,twodig,fourdig,gs_locus):
     ans = max(ans1,ans2)
     
@@ -134,9 +136,10 @@ def single_allele_tally(ans1,ans2,zerodig,twodig,fourdig,gs_locus):
             fourdig[1] = fourdig[1] + 1
     return zerodig,twodig,fourdig
 
-    
-# DESCRIPTION
-# for general accuracy calculation. Only accuracy for samples in both GS and PRE are calculated. Samples in PRE, but not in GS are ignored. Loci in GS, but not in PRE, are tallied in the "nocall" variable 
+###############################   
+# MASTER ACCURACY FUNCTION 
+###############################   
+# For all purpose accuracy calculation. 
 # REQUIREMENTS: 
 # 1. gs accession numbers are under a column labeled "Run" 
 # 2. pre accession numbers are under a column labeled "ERR" 
@@ -144,10 +147,13 @@ def single_allele_tally(ans1,ans2,zerodig,twodig,fourdig,gs_locus):
 # INPUTS:
 # Pandas dataframes for gs and pre
 # OUTPUTS:
-# count number of zerodig, twodig, fourdig, and nocall. 
-# Each is a 2-item list, the first being Class I and second being Class II
-
-def compute_matches(pre,gs):
+# zerodig, twodig, fourdig, and nocall: integer lists of length 2, index 0 holds class I counts, index 1 holds class II counts
+# all_gs_alleles, all_pre_alleles, miscalled_gs_alleles: string list of alleles
+# NOTES:
+# cells in PRE, but not in GS are ignored
+# cells in GS, but not in PRE, are tallied in the "nocall" variable 
+###############################
+def master_accuracy_function(pre,gs):
 
     # Initializing variables
     fourdig = [0,0]
@@ -157,6 +163,10 @@ def compute_matches(pre,gs):
 
     d5 = ['Run', 'A', 'B']
     d6 = ['Run', 'C']
+    
+    all_gs_alleles = [] # to hold all alleles in gold standard
+    all_pre_alleles = [] # to hold all alleles in pre
+    miscalled_gs_alleles = [] # to hold only miscalled alleles in gold standard
 
     accession_numbers = gs["Run"].values.tolist()
     genes = gs.columns.values.tolist()
@@ -173,34 +183,53 @@ def compute_matches(pre,gs):
             
             # use single_allele_tally to tally accuracy of only 1 allele
             for i in range(1,len(genes)):
-                gs_val = gs_row[genes[i]].astype(str).values[0]
-                pre_val1 = pre_row[genes[i]].astype(str).values[0]
-                pre_val2 = pre_row[genes[i]+".1"].astype(str).values[0]
-                gs_locus = gs_val[0] # stores first digit of gs_locus to differentiate class I vs II
                 
+                # get values for gs, pre, and gs_locus
+                gs_val = gs_row[genes[i]].astype(str).values[0]
                 # addresses edge case in D6 only where some gs_val are na. 
                 if gs_val == 'nan':
                     # we ignore these alleles entirely. 'continue' to avoid tallying in any category
                     continue
+                    
+                gs_locus = gs_val[0] # stores first digit of gs_locus to differentiate class I vs II
+                all_gs_alleles.append( gs_val ) 
+                    
+                pre_val1 = pre_row[genes[i]].astype(str).values[0]
+                pre_val2 = pre_row[genes[i]+".1"].astype(str).values[0]
+                
+                all_pre_alleles.append( pre_val1 )
+                all_pre_alleles.append( pre_val2 )
 
+                
+                # compute the accuracy resolution
                 ans1 = compute_resolution(gs_val,pre_val1)
                 ans2 = compute_resolution(gs_val,pre_val2)
-                    
+                
+                # update the results variables
                 zerodig,twodig,fourdig=single_allele_tally(ans1, ans2, zerodig, twodig, fourdig, gs_locus)
+                if (max(ans1,ans2) == 0):
+                     miscalled_gs_alleles.append( gs_val )
 
         # if we are working with d1-d4, the biallelic datasets
         else:
             
             # check accuracy, one locus (pair of alleles) at a time
             for i in range(1,len(genes),2):
+                
+                # get values for gs, pre, and gs_locus
                 gs_val1 = gs_row[genes[i]].astype(str).values[0]
                 gs_val2 = gs_row[genes[i+1]].astype(str).values[0]
                 gs_locus = reformat( gs_val1.split("/")[0])[0] # stores first digit of gs_locus to differentiate class I vs II
+                all_gs_alleles.append( reformat( gs_val1.split("/")[0]) ) 
+                all_gs_alleles.append( reformat( gs_val2.split("/")[0]) ) 
                 
                 try:
                     # try to get the 2 pre alleles at the current iteration loci
                     pre_val1 = pre_row[genes[i]].astype(str).values[0]
                     pre_val2 = pre_row[genes[i+1]].astype(str).values[0]
+                    
+                    all_pre_alleles.append( pre_val1 )
+                    all_pre_alleles.append( pre_val2 )
                     
                     
                 except: # exception occurs if pre alleles do not exist, in which case we will tally as nocall
@@ -241,13 +270,24 @@ def compute_matches(pre,gs):
                 # if one allele is "no call", calculate accuracy as if a mono allele
                 elif no_val1:
                     ans1 = compute_resolution(gs_val1,pre_val2)
-                    ans2 = compute_resolution(gs_val1,pre_val2)
+                    ans2 = compute_resolution(gs_val2,pre_val2)
+                    
+                    if (max(ans1,ans2) == 0):
+                        if ans1 == 0:
+                            miscalled_gs_alleles.append(reformat( gs_val1.split("/")[0]))
+                        else: 
+                            miscalled_gs_alleles.append(reformat( gs_val2.split("/")[0]))
                     zerodig,twodig,fourdig=single_allele_tally(ans1,ans2,zerodig,twodig,fourdig, gs_locus)
-
 
                 elif no_val2:
                     ans1 = compute_resolution(gs_val1,pre_val1)
-                    ans2 = compute_resolution(gs_val1,pre_val1)
+                    ans2 = compute_resolution(gs_val2,pre_val1)
+                    
+                    if (max(ans1,ans2) == 0):
+                        if ans1 == 0:
+                            miscalled_gs_alleles.append(reformat( gs_val1.split("/")[0]))
+                        else: 
+                            miscalled_gs_alleles.append(reformat( gs_val2.split("/")[0]))
                     zerodig,twodig,fourdig=single_allele_tally(ans1,ans2,zerodig,twodig,fourdig, gs_locus)
 
                 else: # most typical case -- both calls are valid alleles
@@ -259,105 +299,38 @@ def compute_matches(pre,gs):
                     # assuming swapping
                     ans3 = compute_resolution(gs_val1,pre_val2)
                     ans4 = compute_resolution(gs_val2,pre_val1)
+                    
+                    if (ans1+ans2 > ans3+ans4):
+                        if (ans1 == 0):
+                            miscalled_gs_alleles.append(reformat( gs_val1.split("/")[0]))
+                        if (ans2 == 0):
+                            miscalled_gs_alleles.append(reformat( gs_val2.split("/")[0]))
+                    else:
+                        if (ans3 == 0):
+                            miscalled_gs_alleles.append(reformat( gs_val2.split("/")[0]))
+                        if (ans4 == 0):
+                            miscalled_gs_alleles.append(reformat( gs_val1.split("/")[0]))
 
                     zerodig,twodig,fourdig=pair_allele_tally(ans1,ans2,ans3,ans4,zerodig,twodig,fourdig, gs_locus)
  
 
-    return zerodig,twodig,fourdig,nocall 
+    return zerodig,twodig,fourdig,nocall,all_gs_alleles,miscalled_gs_alleles,all_pre_alleles
 
-####################
-#
-# # BELOW FUNCTION COMMENTED AS A REMINDER TO REWRITE IT MIRRORING THE BUG FIXES TO COMPUTE_MATCHES
-#
-####################
-#
-# # requirements: gs accession numbers are under a column labeled "Run" 
-# #pre accession numbers are under a column labeled "ERR" 
-# # accession numbers/column titles are labeled identically between gold standard and results csv
-# # Only accuracy for samples in both GS and PRE are calculated. Samples in PRE, but not in GS are ignored. Samples in GS, but not in PRE, are tallied in the "failed" variable 
-# def get_inaccurate_and_all_alleles(pre,gs):
 
-#     zerodig = []
-#     all_alleles = [] # holds all alleles in gold standard
-#     fail = 0
+def get_miscalled_alleles_only(pre,gs):
+    ret = master_accuracy_function(pre,gs)
+    return ret[5] 
 
-#     accession_numbers = gs['Run'].values.tolist()
-#     genes = gs.columns.values.tolist()
 
-#     for number in accession_numbers:
-#         pre_row = pre.loc[pre['ERR'] == number]
-#         gs_row = gs.loc[gs['Run'] == number]
-        
-        
-#         # if we are working with d5 or d6, the monoallelic datasets
-#         if (gs.columns.tolist() == ['Run', 'A', 'B'] or gs.columns.tolist() == ['Run', 'C']):
-#             for i in range(1,len(genes)):
-#                 gs_val = gs_row[genes[i]].astype(str).values[0]
-#                 pre_val1 = pre_row[genes[i]].astype(str).values[0]
-#                 pre_val2 = pre_row[genes[i]+".1"].astype(str).values[0]
-                
-#                 # if the gold standard contains many allele possibilities, and the caller is incorrect,
-#                 # we will return only the first value in the gs
-#                 gs_primary = reformat( gs_val.split("/")[0])
-#                 all_alleles.append( gs_primary ) 
+def get_accuracy_counts(pre,gs):
+    ret = master_accuracy_function(pre,gs)
+    return ret[:4] 
 
-#                 ans1 = compute_resolution(gs_val,pre_val1)
-#                 ans2 = compute_resolution(gs_val,pre_val2)
-#                 if (max(ans1,ans2) == 0):
-#                     zerodig.append(gs_primary)
+def get_miscalled_and_all_alleles(pre,gs):
+    ret = master_accuracy_function(pre,gs)
+    return ret[4:6]
 
-#         # if we are working with d1-d4, the biallelic datasets
-#         else:
-#             for i in range(1,len(genes),2):
-#                 try:
-#                     gs_val1 = gs_row[genes[i]].astype(str).values[0]
-#                     pre_val1 = pre_row[genes[i]].astype(str).values[0]
-#                     gs_val2 = gs_row[genes[i+1]].astype(str).values[0]
-#                     pre_val2 = pre_row[genes[i+1]].astype(str).values[0]
-
-#                     if (gs_val1 == None) or (pre_val1 == None) or (gs_val2 == None) or (pre_val2 == None):
-#                         fail = fail+1
-#                         continue
-                        
-#                     # if the gold standard contains many allele possibilities, and the caller is incorrect,
-#                     # we will return only the first value in the gs
-#                     gs_primary1 = reformat( gs_val1.split("/")[0] ) 
-#                     all_alleles.append(gs_primary1)
-#                     gs_primary2 = reformat( gs_val2.split("/")[0] ) 
-#                     all_alleles.append(gs_primary2)
-
-#                     # assuming no swapping 
-#                     ans1 = compute_resolution(gs_val1,pre_val1)
-#                     ans2 = compute_resolution(gs_val2,pre_val2)
-
-#                     # assuming swapping
-#                     ans3 = compute_resolution(gs_val1,pre_val2)
-#                     ans4 = compute_resolution(gs_val2,pre_val1)
-
-#                     if (ans1+ans2 > ans3+ans4):
-#                         if (ans1 == 0):
-#                             zerodig.append(gs_primary1)
-#                         if (ans2 == 0):
-#                             zerodig.append(gs_primary2)
-#                     else:
-#                         if (ans3 == 0):
-#                             zerodig.append(gs_primary1)
-#                         if (ans4 == 0):
-#                             zerodig.append(gs_primary2)
-#                 except:
-#                     fail = fail+1
-
-#     return zerodig, all_alleles #,fail #onzero fail indicates exception occurred
-
-# requirements: gs accession numbers are under a column labeled "Run" 
-#pre accession numbers are under a column labeled "ERR" 
-# accession numbers/column titles are labeled identically between gold standard and results csv
-# Only accuracy for samples in both GS and PRE are calculated. Samples in PRE, but not in GS are ignored. Samples in GS, but not in PRE, are tallied in the "failed" variable 
-def get_inaccurate_alleles(pre,gs):
-    ret = get_inaccurate_and_all_alleles(pre,gs)
-    return ret[0] 
-
-# TODO: would this be better in the notebook ? is it really a global function
+# function is for ancestry analysis to sum all 4 euro subsets together
 def sum_euro_groups(data,s=False):
     if s:
         ret = []
