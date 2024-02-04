@@ -12,21 +12,21 @@ def fix(s):
         
     return s_new
 
-# compares gs_val to pre_val and returns 0 for miscall, 2 for one-field accurate, and 4 for two-field accurate
+# compares gs_val to pre_val and returns 0 for miscall, 1 for one-field accurate, and 2 for two-field accurate
 def compute_resolution(gs_val,pre_val):
     gs_all = gs_val.split("/")
     pre_fixed = fix(pre_val)
-    flag = False #false = inaccurate, turn to true = 2 digits accurate
+    flag = False #false = inaccurate, turn to true = One field accurate
     
     for val in gs_all:
         gs_fixed = fix(val)
 
         if (gs_fixed[0:2] == pre_fixed[0:2]):
             if (gs_fixed[2:4] == pre_fixed[2:4]):
-                return 4
+                return 2
             flag = True # use flag, rather than "return 2", because there can be multiple val to compare
         
-    return 2 if flag==True else 0
+    return 1 if flag==True else 0
 
 # reformats val to exact X*XX:XX format to standardize and prevent unexpected bugs/symbols
 def reformat(gs_val):
@@ -49,12 +49,12 @@ def pair_allele_tally(ans1,ans2,ans3,ans4,zerofield,onefield,twofield,gs_locus):
                 zerofield[0]  = zerofield[0] + 1 
             else:
                 zerofield[1] = zerofield[1] + 1
-        if (ans1 == 2):
+        if (ans1 == 1):
             if gs_locus != 'D':
                 onefield[0] = onefield[0] + 1 
             else:
                 onefield[1] = onefield[1] + 1
-        if (ans1 == 4):
+        if (ans1 == 2):
             if gs_locus != 'D':
                 twofield[0] = twofield[0] + 1 
             else:
@@ -66,12 +66,12 @@ def pair_allele_tally(ans1,ans2,ans3,ans4,zerofield,onefield,twofield,gs_locus):
                 zerofield[0] = zerofield[0] + 1 
             else:
                 zerofield[1] = zerofield[1] + 1
-        if (ans2 == 2):
+        if (ans2 == 1):
             if gs_locus != 'D':
                 onefield[0] = onefield[0] + 1 
             else:
                 onefield[1] = onefield[1] + 1
-        if (ans2 == 4):
+        if (ans2 == 2):
             if gs_locus != 'D':
                 twofield[0] = twofield[0] + 1 
             else:
@@ -85,12 +85,12 @@ def pair_allele_tally(ans1,ans2,ans3,ans4,zerofield,onefield,twofield,gs_locus):
                 zerofield[0] = zerofield[0] + 1 
             else:
                 zerofield[1] = zerofield[1] + 1
-        if (ans3 == 2):
+        if (ans3 == 1):
             if gs_locus != 'D':
                 onefield[0] = onefield[0] + 1 
             else:
                 onefield[1] = onefield[1] + 1
-        if (ans3 == 4):
+        if (ans3 == 2):
             if gs_locus != 'D':
                 twofield[0] = twofield[0] + 1 
             else:
@@ -102,12 +102,12 @@ def pair_allele_tally(ans1,ans2,ans3,ans4,zerofield,onefield,twofield,gs_locus):
                 zerofield[0] = zerofield[0] + 1 
             else:
                 zerofield[1] = zerofield[1] + 1
-        if (ans4 == 2):
+        if (ans4 == 1):
             if gs_locus != 'D':
                 onefield[0] = onefield[0] + 1 
             else:
                 onefield[1] = onefield[1] + 1
-        if (ans4 == 4):
+        if (ans4 == 2):
             if gs_locus != 'D':
                 twofield[0] = twofield[0] + 1 
             else:
@@ -124,12 +124,12 @@ def single_allele_tally(ans1,ans2,zerofield,onefield,twofield,gs_locus):
             zerofield[0] = zerofield[0] + 1 
         else:
             zerofield[1] = zerofield[1] + 1
-    if (ans == 2):
+    if (ans == 1):
         if gs_locus != 'D':
             onefield[0] = onefield[0] + 1 
         else:
             onefield[1] = onefield[1] + 1
-    if (ans == 4):
+    if (ans == 2):
         if gs_locus != 'D':
             twofield[0] = twofield[0] + 1 
         else:
@@ -188,12 +188,12 @@ def master_accuracy_function(pre,gs):
         # if we are working with d5 or d6, the monoallelic datasets
         if (gs.columns.tolist() == d5 or gs.columns.tolist() == d6):
             
-            # use single_allele_tally to tally accuracy of only 1 allele
             for i in range(1,len(genes)):
                 
                 # get values for gs, pre, and gs_locus
                 gs_val = gs_row[genes[i]].astype(str).values[0]
-                # addresses edge case in D6 only where some gs_val are na. 
+                
+                # addresses edge case in D6 where some gs_val are na. 
                 if gs_val == 'nan':
                     # we ignore these alleles entirely. 'continue' to avoid tallying in any category
                     continue
@@ -230,9 +230,18 @@ def master_accuracy_function(pre,gs):
                 all_gs_alleles.append( reformat( gs_val1.split("/")[0]) ) 
                 all_gs_alleles.append( reformat( gs_val2.split("/")[0]) ) 
                 
+                 #addresses edge case in only read length gs where one or more loci is nan
+                if gs_val1 == 'nan' and gs_val2 == 'nan':
+                    # we ignore these loci entirely. 'continue' to avoid tallying in any category
+                    continue
+                
+                if gs_val1 == 'nan' or gs_val2 == 'nan':
+                    print ("entered gs_val1 xor gs_val2 does not exist case. TODO")
+                    # TODO: not sure if this happens yet, if it does, I will implement it
+                
                 try:
                     # try to get the 2 pre alleles at the current iteration loci
-                    pre_val1 = pre_row[genes[i]].astype(str).values[0]
+                    pre_val1 = pre_row[genes[i]].astype(str).values[0]                    
                     pre_val2 = pre_row[genes[i+1]].astype(str).values[0]
                     
                     all_pre_alleles.append( pre_val1 )
@@ -250,7 +259,7 @@ def master_accuracy_function(pre,gs):
                         
                     # skip rest of loop
                     continue
-               
+                
                     
                 # handling cases where one or both alleles are "no call"
                 no_val1 = False
@@ -269,6 +278,7 @@ def master_accuracy_function(pre,gs):
                         nocall[0] += 1 
                     else:
                         nocall[1] += 1
+                
 
                 #if both alleles are "no call" simply end this iteration
                 if no_val1 and no_val2:
@@ -306,6 +316,7 @@ def master_accuracy_function(pre,gs):
                     # assuming swapping
                     ans3 = compute_resolution(gs_val1,pre_val2)
                     ans4 = compute_resolution(gs_val2,pre_val1)
+
                     
                     if (ans1+ans2 > ans3+ans4):
                         if (ans1 == 0):
@@ -321,7 +332,7 @@ def master_accuracy_function(pre,gs):
                     zerofield,onefield,twofield=pair_allele_tally(ans1,ans2,ans3,ans4,zerofield,onefield,twofield, gs_locus)
  
 
-    return zerofield,onefield,twofield,nocall,all_gs_alleles,miscalled_gs_alleles,all_pre_alleles
+    return zerofield,onefield,twofield,nocall,miscalled_gs_alleles,all_gs_alleles,all_pre_alleles
 
 
 def get_miscalled_alleles_only(pre,gs):
@@ -338,6 +349,7 @@ def get_miscalled_and_all_alleles(pre,gs):
     return ret[4:6]
 
 # function is for ancestry analysis to sum all 4 euro subsets together
+# use s=True if the data is string
 def sum_euro_groups(data,s=False):
     if s:
         ret = []
@@ -346,9 +358,10 @@ def sum_euro_groups(data,s=False):
                 ret.append(allele)
         return ret
     else:
-        ret = [0,0,0]
+        ret = [0,0,0,0]
         for group in data:
             ret[0] += group[0]
             ret[1] += group[1]
             ret[2] += group[2]
+            ret[3] += group[3]
         return ret
