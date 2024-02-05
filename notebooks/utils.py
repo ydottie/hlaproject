@@ -1,3 +1,5 @@
+import pandas as pd
+
 # formats alleles into barebones 4-char strings. for ex, input s=A*01:03 returns 0103
 def fix(s):
     firstcolon = s.find(":")
@@ -337,7 +339,7 @@ def master_accuracy_function(pre,gs):
 
 def get_miscalled_alleles_only(pre,gs):
     ret = master_accuracy_function(pre,gs)
-    return ret[5] 
+    return ret[4] 
 
 
 def get_accuracy_counts(pre,gs):
@@ -345,23 +347,28 @@ def get_accuracy_counts(pre,gs):
     return ret[:4] 
 
 def get_miscalled_and_all_alleles(pre,gs):
+    '''returns miscalled_gs_alleles,all_gs_alleles'''
     ret = master_accuracy_function(pre,gs)
     return ret[4:6]
 
-# function is for ancestry analysis to sum all 4 euro subsets together
-# use s=True if the data is string
-def sum_euro_groups(data,s=False):
-    if s:
-        ret = []
-        for group in data:
-            for allele in group:
-                ret.append(allele)
-        return ret
-    else:
-        ret = [0,0,0,0]
-        for group in data:
-            ret[0] += group[0]
-            ret[1] += group[1]
-            ret[2] += group[2]
-            ret[3] += group[3]
-        return ret
+# split predictions into europe and yoruba df, for ancestry analysis
+def split_csv_by_ancestry():
+    ''' returns europe_df, yoruba_df '''
+    # can modify filepaths as necessary 
+    groupscsv = "../datasets/SraRunTableD1.txt"
+    goldstandard = "../datasets/1_gs.csv"
+    
+    gs = pd.read_csv(goldstandard)
+    groups = pd.read_csv(groupscsv)
+
+    dfs = []
+
+    for group, df_by_group in groups.groupby('Population'):
+        accession_numbers = df_by_group['Run'].values.tolist()
+        gs_final = gs[gs['Run'].isin(accession_numbers)] #gs_final is a df containing the gold standard samples per population group
+        dfs.append(gs_final)
+
+    europe_df = pd.concat([dfs[0],dfs[1],dfs[2],dfs[3]])
+    yoruba_df =dfs[4]
+    
+    return europe_df, yoruba_df
