@@ -372,3 +372,15 @@ def split_csv_by_ancestry():
     yoruba_df =dfs[4]
     
     return europe_df, yoruba_df
+
+# mainly for misread allele analysis 
+def get_locus(allele):
+    ''' from an allele, get corresponding locus ''' 
+    if allele[0] == "D":
+        if allele[1] == 'R':
+            return "DRB1"
+        else:
+            return "DQB1"
+        
+    else:
+        return allele[0]
