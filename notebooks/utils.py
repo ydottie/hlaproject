@@ -1,4 +1,9 @@
 import pandas as pd
+from matplotlib import colors as mcolors
+
+
+# color palette
+palette = [mcolors.to_rgba(c) for c in [ "#be6968", '#61ba40',"#6590ca",'coral','orange','gold','skyblue','cornflowerblue', '#e9af61',"#49adad" ] ]
 
 # formats alleles into barebones 4-char strings. for ex, input s=A*01:03 returns 0103
 def fix(s):
@@ -384,3 +389,14 @@ def get_locus(allele):
         
     else:
         return allele[0]
+    
+def convert_pvalue_to_asterisks(pvalue):
+    if pvalue <= 0.0001:
+        return "****"
+    elif pvalue <= 0.001:
+        return "***"
+    elif pvalue <= 0.01:
+        return "**"
+    elif pvalue <= 0.05:
+        return "*"
+    return "ns"
