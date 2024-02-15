@@ -1,0 +1,31 @@
+name: phlat
+channels:
+  - imperial-college-research-computing
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1=conda_forge
+  - _openmp_mutex=4.5=2_gnu
+  - ca-certificates=2024.2.2=hbcca054_0
+  - certifi=2019.11.28=py27h8c360ce_1
+  - ld_impl_linux-64=2.40=h41732ed_0
+  - libffi=3.2.1=he1b5a44_1007
+  - libgcc-ng=13.2.0=h807b86a_5
+  - libgomp=13.2.0=h807b86a_5
+  - libsqlite=3.44.2=h2797004_0
+  - libstdcxx-ng=13.2.0=h7e041cc_5
+  - libzlib=1.2.13=hd590300_5
+  - ncurses=6.4=h59595ed_2
+  - openssl=1.1.1w=hd590300_0
+  - pip=20.1.1=pyh9f0ad1d_0
+  - pysam=0.8.3=py27h2b63b92_9
+  - python=2.7.15=h5a48372_1011_cpython
+  - python_abi=2.7=1_cp27mu
+  - readline=8.2=h8228510_1
+  - setuptools=44.0.0=py27_0
+  - sqlite=3.44.2=h2c6b66d_0
+  - tk=8.6.13=noxft_h4845f30_101
+  - wheel=0.37.1=pyhd8ed1ab_0
+  - zlib=1.2.13=hd590300_5
+prefix: /home1/rayyala/anaconda3/envs/phlat
