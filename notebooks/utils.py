@@ -13,11 +13,23 @@ def fix(s):
     if firstcolon == -1:
         star = s.find("*")
         s_new = s[star+1:]
-        s_new.ljust(4, '0')
+        s_new.ljust(4, '-') # '-' is a placeholder value to pad the string ot length 4 when there is only 1-field prediction
     else:
         s_new = s[firstcolon-2:firstcolon] + s[firstcolon+1:firstcolon+3]
         
     return s_new
+
+# not the most robust, foolproof function... but it works for our purposes, and i can always buff it up later if necessary.
+def is_valid_allele(s):
+    if s == None:
+        return False
+    if s == 'nan':
+        return False
+    if s == '.':
+        return False
+    if len(s) <= 3: # the shortest prediction we expect is length 4, corresponding to 1-field prediction 
+        return False 
+    return True
 
 # compares gs_val to pre_val and returns 0 for miscall, 1 for one-field accurate, and 2 for two-field accurate
 def compute_resolution(gs_val,pre_val):
@@ -151,6 +163,7 @@ def single_allele_tally(ans1,ans2,zerofield,onefield,twofield,gs_locus):
 # 1. gs accession numbers are under a column labeled "Run" 
 # 2. pre accession numbers are under a column labeled "ERR" 
 # 3. accession numbers/column titles are labeled identically between gs and pre csv's
+# 4. If only 1 prediction is made, it fills up the first cell in the csv (the even indexed cell, not the odd indexed one)
 # INPUTS:
 # Pandas dataframes for gs and pre
 # OUTPUTS:
@@ -211,8 +224,10 @@ def master_accuracy_function(pre,gs):
                 pre_val1 = pre_row[genes[i]].astype(str).values[0]
                 pre_val2 = pre_row[genes[i]+".1"].astype(str).values[0]
                 
-                all_pre_alleles.append( pre_val1 )
-                all_pre_alleles.append( pre_val2 )
+                if is_valid_allele(pre_val1):
+                    all_pre_alleles.append( pre_val1 )
+                if is_valid_allele(pre_val2):
+                    all_pre_alleles.append( pre_val2 )
 
                 
                 # compute the accuracy resolution
@@ -237,23 +252,21 @@ def master_accuracy_function(pre,gs):
                 all_gs_alleles.append( reformat( gs_val1.split("/")[0]) ) 
                 all_gs_alleles.append( reformat( gs_val2.split("/")[0]) ) 
                 
-                 #addresses edge case in only read length gs where one or more loci is nan
+                 #addresses edge case in only read length gs where some samples do NOT have predictions at certain loci
                 if gs_val1 == 'nan' and gs_val2 == 'nan':
                     # we ignore these loci entirely. 'continue' to avoid tallying in any category
                     continue
                 
                 if gs_val1 == 'nan' or gs_val2 == 'nan':
                     print ("entered gs_val1 xor gs_val2 does not exist case. TODO")
-                    # TODO: not sure if this happens yet, if it does, I will implement it
+                    # TODO: this is an impossible case with our current gs, but if it becomes necessary, I will implement 
                 
                 try:
                     # try to get the 2 pre alleles at the current iteration loci
+                    # NOTE: if pre_val1 is a segfault/allele does not exist error, then pre_val2 is not checked. So it is important that if a tool only makes 1 prediction, that value is placed in the first (left-side) column, rather than second (right-side) column
                     pre_val1 = pre_row[genes[i]].astype(str).values[0]                    
                     pre_val2 = pre_row[genes[i+1]].astype(str).values[0]
-                    
-                    all_pre_alleles.append( pre_val1 )
-                    all_pre_alleles.append( pre_val2 )
-                    
+
                     
                 except: # exception occurs if pre alleles do not exist, in which case we will tally as nocall
                     # if allele in class I (ie, gs_locus is not D), increment nocall[1]
@@ -268,23 +281,31 @@ def master_accuracy_function(pre,gs):
                     continue
                 
                     
-                # handling cases where one or both alleles are "no call"
+                # handling cases where one or both alleles are "no call". First initialize no_val1 and no_val2 to False
                 no_val1 = False
                 no_val2 = False
 
-                if pre_val1 == None or pre_val1 == 'nan':
+                # if pre_val is a 'no-call', first toggle no_val to true. Then tally nocall variable. Else, append to all_pre_alleles 
+                if not is_valid_allele(pre_val1):
                     no_val1=True
+                    
                     if gs_locus != 'D':
                         nocall[0] += 1 
                     else:
                         nocall[1] += 1
+                else:
+                    all_pre_alleles.append( pre_val1 )
 
-                if pre_val2 == None or pre_val2 == 'nan':
+                if not is_valid_allele(pre_val2):
+                    
                     no_val2=True
+                    
                     if gs_locus != 'D':
                         nocall[0] += 1 
                     else:
                         nocall[1] += 1
+                else:
+                    all_pre_alleles.append( pre_val1 )
                 
 
                 #if both alleles are "no call" simply end this iteration
@@ -339,7 +360,7 @@ def master_accuracy_function(pre,gs):
                     zerofield,onefield,twofield=pair_allele_tally(ans1,ans2,ans3,ans4,zerofield,onefield,twofield, gs_locus)
  
 
-    return zerofield,onefield,twofield,nocall,miscalled_gs_alleles,all_gs_alleles,all_pre_alleles
+    return zerofield,onefield,twofield,nocall,miscalled_gs_alleles,all_gs_alleles ,all_pre_alleles # currently all_pre_alleles is not used for any analyses
 
 
 def get_miscalled_alleles_only(pre,gs):
